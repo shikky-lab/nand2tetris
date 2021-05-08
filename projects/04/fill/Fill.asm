@@ -12,3 +12,46 @@
 // the screen should remain fully clear as long as no key is pressed.
 
 // Put your code here.
+
+(LOOP)
+    @KBD
+    D=M
+    @TOBLACK
+    D;JNE
+    @R4// R4 uses as a color. the screen will be filled by r4 value
+    M=-1
+    @FILLSTART
+    0;JMP
+(TOBLACK)
+    @R4
+    M=0
+(FILLSTART)
+    @SCREEN
+    D=A
+    @R6//R6 uses as a incremantal screen address. This value will be incremented for each loop.
+    M=D
+
+    @32
+    D=A
+    @R5//R5 uses as a counter. The count will be decremented for each loop
+    M=D
+    (FILLLOOP)
+    @R5
+    D=M
+    @FILLLOOPEND
+    D;JLE
+    
+    @R4
+    D=M
+    @R6
+    A=M+1
+    M=D
+    @R6
+    M=M+1
+    @R5
+    M=M-1
+    @FILLLOOP
+    0;JMP
+(FILLLOOPEND)
+    @LOOP
+    0;JMP
