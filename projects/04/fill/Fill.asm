@@ -28,30 +28,49 @@
 (FILLSTART)
     @SCREEN
     D=A
-    @R6//R6 uses as a incremantal screen address. This value will be incremented for each loop.
+    @R7//R7 uses as a incremantal screen address. This value will be incremented for each loop.
     M=D
 
-    @32
+    @255
+    D=A
+    @R6//R6 uses as a counter. The count will be decremented for each loop
+    M=D
+
+    (FILLLOOPROW)
+    @R6
+    D=M
+    @FILLLOOPROWEND
+    D;JLE
+
+    @31
     D=A
     @R5//R5 uses as a counter. The count will be decremented for each loop
     M=D
-    (FILLLOOP)
+
+    (FILLLOOPCOL)
     @R5
     D=M
-    @FILLLOOPEND
+    @FILLLOOPCOLEND
     D;JLE
     
     @R4
     D=M
-    @R6
-    A=M+1
+    @R7
+    A=M
     M=D
-    @R6
+    @R7
     M=M+1
+
     @R5
     M=M-1
-    @FILLLOOP
+    @FILLLOOPCOL
     0;JMP
-(FILLLOOPEND)
+(FILLLOOPCOLEND)
+    @R6
+    M=M-1
+    @FILLLOOPROW
+    0;JMP
+
+(FILLLOOPROWEND)
     @LOOP
     0;JMP
