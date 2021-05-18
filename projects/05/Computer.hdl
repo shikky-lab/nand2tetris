@@ -19,5 +19,12 @@ CHIP Computer {
     IN reset;
 
     PARTS:
-    // Put your code here:
+    DFF(in=reset,out=outD);
+    Xor(a=outD,b=reset,out=resetXor);
+    And(a=reset,b=resetXor,out=resetOut);
+
+    CPU(instruction=instructionOut,inM=memoryOut,reset=resetOut,pc=pcOut,addressM=addressMout,outM=outMout,writeM=writeMout);
+    ROM32K(address=pcOut,out=instructionOut);
+    Memory(in=outMout,load=writeMout,address=addressMout,out=memoryOut);
+    
 }

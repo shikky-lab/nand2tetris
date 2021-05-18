@@ -39,5 +39,62 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+
+    //Decode instruction
+    And(a=true,b=instruction[15],out=isC);
+    And(a=true,b=instruction[3],out=tempUpdateM);
+    And(a=true,b=instruction[4],out=tempUpdateD);
+    And(a=true,b=instruction[5],out=updateA);
+
+    And(a=isC,b=tempUpdateM,out=updateM);
+    And(a=isC,b=tempUpdateD,out=updateD);
+
+    //Select candidate for A-register
+    //If the command is (isC and updateA), then use past outM.
+    And(a=isC,b=updateA,out=updateAcommand);
+    Mux16(a=instruction,b=outM2,sel=updateAcommand,out=candidateA);
+
+    //Update A-register if needed
+    //Cases are !isC or (isC and updateA)
+    Not(in=isC,out=isA);
+    Or(a=isA,b=updateAcommand,out=loadA);
+    ARegister(in=candidateA,load=loadA,out=loadedA);
+
+    //Select to use A or M 
+    //instruction[12] at command mode denotes which to use
+    Mux16(a=loadedA,b=inM,sel=instruction[12],out=outAorM);
+
+    //Pop or update D-register.
+    DRegister(in=outM2,load=updateD,out=outD);
+
+    //Prepare input for ALU
+    //If the command is "A", ALU just passes throgh input A value.
+    Mux16(a[4..5]=true,b[0..5]=instruction[6..11],sel=isC,out[5]=compZX,out[4]=compNX,out[3]=compZY,out[2]=compNY,out[1]=compF,out[0]=compNO);
+
+    //Calculate with ALU
+    ALU(x=outD,y=outAorM,zx=compZX,nx=compNX,zy=compZY,ny=compNY,f=compF,no=compNO,out=outM,out=outM2,zr=isZero,ng=isNegative);
+
+    //Select whether to write outM into memory.
+    //* In fact, if it is named "writeM" from the beginning, no such conversion is needed.
+    And(a=true,b=updateM,out=writeM);
+
+    //Output addressM
+    And16(a=true,b=loadedA,out[0..14]=addressM);
+
+    //Caluclate whetehr to jumb address or not.
+    //instruction[0..2]'s each bit means flags that jamp when (out>0),(out==0),(out<0)
+    Or(a=isNegative,b=isZero,out=isNotPositive);
+    Not(in=isNotPositive,out=isPositive);
+
+    And(a=instruction[0],b=isPositive,out=j0);
+    And(a=instruction[1],b=isZero,out=j1);
+    And(a=instruction[2],b=isNegative,out=j2);
+    Or(a=j0,b=j1,out=j01);
+    Or(a=j01,b=j2,out=j012);
+    And(a=isC,b=j012,out=needJump);
+
+    //Update pc
+    PC(in=loadedA,load=needJump,inc=true,reset=reset,out[0..14]=pc);
+
+    
 }
