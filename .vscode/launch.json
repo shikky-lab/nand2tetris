@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "inputs": [ // https://hachian.com/2020/08/24/vscode-inputs-launch-json/ から引用
+        {
+            "type": "promptString",
+            "id": "prompt",
+            "description": "引数を入力してください。",
+            "default": "-f projects/06/"
+        }
+    ],
+    "configurations": [
+        //https://qiita.com/murasuke/items/9ce3eeeee949324f32b7 を参考にもろもろコピペ
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "debug TypeScript by ts-node",
+            "skipFiles": [
+                "<node_internals>/**",
+                "node_modules/**"
+            ],
+            "runtimeArgs": [
+                "--nolazy",
+                "-r",
+                "ts-node/register"
+            ], // ts-nodeを読み込みます(nolazyは無くても動きます。V8エンジンにスクリプト解析を延滞させないためのオプション(指定しないとブレークポイントスキップする可能性があるため))
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "${file}",
+                "--transpile-only",
+                "${input:prompt}"
+            ], // デバッグを開始するファイルを指定する。「${file}」はアクティブなファイルのフルパス(開いているファイルをデバッグする)
+            "env": {
+                "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+            }
+        },
+    ]
+}
