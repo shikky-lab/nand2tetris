@@ -8,7 +8,7 @@
             "type": "promptString",
             "id": "prompt",
             "description": "引数を入力してください。",
-            "default": "-f projects/06/"
+            "default": "-f projects/07/MemoryAccess/StaticTest/StaticTest.vm"
         }
     ],
     "configurations": [
