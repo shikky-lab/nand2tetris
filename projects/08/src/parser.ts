@@ -1,20 +1,10 @@
 
-import yargs from 'yargs/yargs';
-import fs from 'fs';
-import path from "path";
-import { Command } from 'commander';
-import { CodeWriter } from "./CodeWriter"
-
-const command = yargs(process.argv.slice(2)).options({
-    f: { type: 'string', demandOption: true }
-});
-
 const isNumber = /^\d*$/;
 
 export type ArithmeticCommand = { calcType: "ADD" } | { calcType: "SUB" } | { calcType: "ADD" } | { calcType: "NEG" } | { calcType: "EQ" } | { calcType: "GT" } | { calcType: "LT" } | { calcType: "AND" } | { calcType: "OR" } | { calcType: "NOT" }
-export type VmCommand = { type: "ARITHMETIC", calc: ArithmeticCommand } | { type: "PUSH", arg1: string, arg2: number } | { type: "POP", arg1: string, arg2: number } | { type: "LABEL" } | { type: "GOTO" } | { type: "IF" } | { type: "FUNCTION" } | { type: "RETURN" } | { type: "CALL" } | { type: "NONE" };
+export type VmCommand = { type: "ARITHMETIC", calc: ArithmeticCommand } | { type: "PUSH", arg1: string, arg2: number } | { type: "POP", arg1: string, arg2: number } | { type: "LABEL", arg1: string } | { type: "GOTO", arg1: string } | { type: "IF", arg1: string } | { type: "FUNCTION", arg1: string, arg2: number } | { type: "RETURN" } | { type: "CALL", arg1: string, arg2: number } | { type: "NONE" };
 
-class Parser {
+export class Parser {
     private curPos = 0;
     private lines: string[] = [];
 
@@ -28,7 +18,7 @@ class Parser {
         //コメント除去
         let commentPos = line.indexOf("//");
         if (commentPos != -1) {
-            line = line.substr(0, commentPos);
+            line = line.substring(0, commentPos);
         }
 
         //コマンド部分の文字列を抽出
@@ -76,17 +66,26 @@ class Parser {
                 }
                 return { type: "POP", arg1: commandWords[1], arg2: Number(commandWords[2]) };
             case "label":
-                return { type: "LABEL" };
+                if (commandWords.length != 2) {
+                    throw Error("Irregal format of pop. line:" + this.curPos);
+                }
+                return { type: "LABEL", arg1: commandWords[1] };
             case "goto":
-                return { type: "GOTO" };
+                if (commandWords.length != 2) {
+                    throw Error("Irregal format of pop. line:" + this.curPos);
+                }
+                return { type: "GOTO", arg1: commandWords[1] };
             case "if-goto":
-                return { type: "IF" };
+                if (commandWords.length != 2) {
+                    throw Error("Irregal format of pop. line:" + this.curPos);
+                }
+                return { type: "IF", arg1: commandWords[1] };
             case "function":
-                return { type: "FUNCTION" };
+                return { type: "FUNCTION", arg1: commandWords[1], arg2: Number(commandWords[2]) };
             case "return":
                 return { type: "RETURN" };
             case "call":
-                return { type: "CALL" };
+                return { type: "CALL", arg1: commandWords[1], arg2: Number(commandWords[2]) };
             default:
                 throw Error("Irregal command exists. line:" + this.curPos);
         }
@@ -103,78 +102,3 @@ class Parser {
         this.curPos++;
     }
 }
-
-function parseFiles(filePath: string, codeWriter: CodeWriter) {
-
-    let firstFileStats = fs.statSync(filePath);
-    let filenames = new Array<string>();
-    if (firstFileStats.isDirectory()) {
-        try {
-            filenames = fs.readdirSync(filePath);
-        } catch (err) {
-            console.log("The target file does not exist");
-            throw new Error("The target file does not exist");
-        }
-    } else {
-        filenames.push("");
-    }
-
-
-    let fileStats: fs.Stats;
-    filenames.forEach((fname) => {
-        const fullPath = path.join(filePath, fname);
-        fileStats = fs.statSync(fullPath);
-        if (fileStats.isDirectory()) {
-            parseFiles(fullPath, codeWriter);
-        } else if (path.parse(fullPath).ext === ".vm") {
-            let script = fs.readFileSync(fullPath);
-            let lines = script.toString().split('\r\n');
-            let fileName = path.parse(fullPath).name;
-            const parser = new Parser(lines);
-            codeWriter.setFileName(fileName);
-            while (1) {
-                if (!parser.hasMoreCommands()) {
-                    console.log("parse finished!");
-                    break;
-                }
-                let command = parser.getCommand();
-                let code = codeWriter.convertCommand(command);
-                codeWriter.writeCode(code);
-                parser.advance();
-            }
-        }
-
-    })
-}
-
-// let filePath: string;
-(async () => {
-    const argv = await command.argv;
-    let filePath = argv.f
-    if (filePath.startsWith(" ")) {//なぜか冒頭にスペースが入る事があるので除去する
-        filePath = filePath.replace(" ", "");
-    }
-
-    let fileStats: fs.Stats;
-    try {
-        fileStats = fs.statSync(filePath);
-    } catch (err) {
-        console.log("The target file does not exist");
-        throw new Error("The target file does not exist");
-    }
-
-    let srcPathObject = path.parse(filePath);
-    let destPathObject = { ...srcPathObject };
-    destPathObject.base = "";// if "base" property exists, "ext" parameter will be ignored.
-    destPathObject.ext = ".asm";
-    let destFilePath = path.format(destPathObject)
-
-    let codeWriter = new CodeWriter(destFilePath);
-
-    parseFiles(filePath, codeWriter);
-
-    codeWriter.writeWrapUp();
-    console.log("added wrap-up code");
-})();
-
-

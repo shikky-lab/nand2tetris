@@ -16,12 +16,14 @@ const SEGMENTS = {
 export class CodeWriter {
     private ws;
     private ripNum = 0;
-    private fileName: string;
+    private fileName: string | undefined;
 
-    constructor(destPathObject: path.ParsedPath) {
-        let destFilePath = path.format(destPathObject)
-        this.ws = fs.createWriteStream(destFilePath);
-        this.fileName = destPathObject.name;
+    constructor(deseFilePath: string) {
+        this.ws = fs.createWriteStream(deseFilePath);
+    }
+
+    public setFileName(fileName: string) {
+        this.fileName = fileName;
     }
 
     //SPをデクリメントし，*(元SP-1)の値をDに代入する
@@ -65,6 +67,10 @@ export class CodeWriter {
     }
 
     public convertCommand(command: VmCommand): string {
+        if (this.fileName === undefined) {
+            console.log("File name hasn't been passed");
+            throw new Error("File name hasn't been passed");
+        }
         let code = "";
         switch (command.type) {
             case 'PUSH':
