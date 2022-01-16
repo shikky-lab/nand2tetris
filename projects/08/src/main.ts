@@ -16,8 +16,14 @@ const argv = yargs
 
 
 function generateDestFileName(filePath: string): string {
-    let srcPathObject = path.parse(filePath);
+    const srcPathObject = path.parse(filePath);
     let destPathObject = { ...srcPathObject };
+
+    const firstFileStats = fs.statSync(filePath);
+    if (firstFileStats.isDirectory()) {
+        destPathObject.dir = filePath;
+    }
+
     destPathObject.base = "";// if "base" property exists, "ext" parameter will be ignored.
     destPathObject.ext = ".asm";
     return path.format(destPathObject)
@@ -31,8 +37,9 @@ function extractTargetFileList(targetPath: string) {
     } else if (firstFileStats.isDirectory()) {
         const filenames = fs.readdirSync(targetPath);
         const targetFilePaths = filenames.filter(filename => {
-            const filePath = path.parse(filename);
-            const fileStats = fs.statSync(filename);
+            const fullPath = path.join(targetPath, filename);
+            const filePath = path.parse(fullPath);
+            const fileStats = fs.statSync(fullPath);
             return (filePath.ext === ".vm" && fileStats.isFile());
         }).map(filename => path.join(targetPath, filename));
         return targetFilePaths;
@@ -50,7 +57,6 @@ function parseFiles(filePaths: string[], codeWriter: CodeWriter) {
         const fileName = path.parse(filePath).name;
         const parser = new Parser(lines);
         codeWriter.setFileName(fileName);
-        let convertedCodes: string[] = new Array();
         while (1) {
             if (!parser.hasMoreCommands()) {
                 console.log("parse finished!");
@@ -67,17 +73,9 @@ function parseFiles(filePaths: string[], codeWriter: CodeWriter) {
 
 const filePath = argv.file.trim();//なぜか冒頭・末尾にスペースが入るため除去する
 
-const fileStats = (() => {
-    try {
-        return fs.statSync(filePath);
-    } catch (err) {
-        console.log("The target file does not exist");
-        throw new Error("The target file does not exist");
-    }
-})();
-
 const destFilePath = generateDestFileName(filePath);
-let codeWriter = new CodeWriter(destFilePath);
+const codeWriter = new CodeWriter(destFilePath);
+codeWriter.writeInitialCode();
 
 const targetFilePaths = extractTargetFileList(filePath);
 parseFiles(targetFilePaths, codeWriter);
@@ -86,4 +84,4 @@ codeWriter.writeWrapUp();
 console.log("added wrap-up code");
 
 codeWriter.writeCode();
-console.log("finished all prosess!!!");
+console.log("finished all process!!!");

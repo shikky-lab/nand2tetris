@@ -2,7 +2,16 @@
 const isNumber = /^\d*$/;
 
 export type ArithmeticCommand = { calcType: "ADD" } | { calcType: "SUB" } | { calcType: "ADD" } | { calcType: "NEG" } | { calcType: "EQ" } | { calcType: "GT" } | { calcType: "LT" } | { calcType: "AND" } | { calcType: "OR" } | { calcType: "NOT" }
-export type VmCommand = { type: "ARITHMETIC", calc: ArithmeticCommand } | { type: "PUSH", arg1: string, arg2: number } | { type: "POP", arg1: string, arg2: number } | { type: "LABEL", arg1: string } | { type: "GOTO", arg1: string } | { type: "IF", arg1: string } | { type: "FUNCTION", arg1: string, arg2: number } | { type: "RETURN" } | { type: "CALL", arg1: string, arg2: number } | { type: "NONE" };
+export type PushVmCommand = { type: "PUSH", arg1: string, arg2: number }
+export type PopVmCommand = { type: "POP", arg1: string, arg2: number }
+export type ArithmeticVmCommand = { type: "ARITHMETIC", calc: ArithmeticCommand }
+export type LabelVmCommand = { type: "LABEL", arg1: string }
+export type GotoVmCommand = { type: "GOTO", arg1: string }
+export type IfVmCommand = { type: "IF", arg1: string }
+export type FunctionVmCommand = { type: "FUNCTION", arg1: string, arg2: number }
+export type ReturnVmCommand = { type: "RETURN" }
+export type CallVmCommand = { type: "CALL", arg1: string, arg2: number }
+export type VmCommand = ArithmeticVmCommand | PushVmCommand | PopVmCommand | LabelVmCommand | GotoVmCommand | IfVmCommand | FunctionVmCommand | ReturnVmCommand | CallVmCommand | { type: "NONE" };
 
 export class Parser {
     private curPos = 0;
